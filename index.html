@@ -1,27 +1,29 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-    <title>Leaflet and D3 Map</title>
+    <title>timeseries-map</title>
     <meta charset="utf-8" />
-    <link 
-        rel="stylesheet" 
-        href="http://cdn.leafletjs.com/leaflet-0.7/leaflet.css"
-    />
-    
+    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7/leaflet.css" />
+    <link rel="stylesheet" type="text/css" href="styles.css">
+
 </head>
+
 <body>
 
-    <div id="map" style="width: 960px; height: 500px"> Hello </div>
+    <div id="map"></div>
+    <div id="plot" class="svg-container"></div>
 
- <script src="http://d3js.org/d3.v5.min.js"></script>
 
-    <script
-        src="http://cdn.leafletjs.com/leaflet-0.7/leaflet.js">
-    </script>
+    <script src="http://d3js.org/d3.v5.min.js"></script>
 
-    <script
-        src="http://localhost:8000/map.js">
-        
-    </script>
+    <script src="http://cdn.leafletjs.com/leaflet-0.7/leaflet.js"></script>
+
+    <script src="http://localhost:8000/map.js"></script>
+
+    <script src="http://localhost:8000/plot.js"></script>
+
 </body>
+
 </html>
+</script>
