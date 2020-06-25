@@ -1,71 +1,64 @@
-// ----- CREATE LEAFLET ---------------------------//
-var map = L.map('map').setView([35.5, -96.5], 4);
-mapLink =
-  '<a href="http://openstreetmap.org">OpenStreetMap</a>';
+// mapid is the id of the div where the map will appear
+let map = L
+  .map('mapid')
+  .setView([35.5, -96.5], 4); // center position + zoom
+
+// Add a tile to the map = a background. Comes from OpenStreetmap
 L.tileLayer(
-  'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; ' + mapLink + ' Contributors',
-    maxZoom: 18,
+  'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a>',
+    maxZoom: 12,
   }).addTo(map);
 
-// Initialize the SVG layer
-map._initPathRoot()
+
+// Add a svg layer to the map
+L.svg().addTo(map);
 
 // We pick up the SVG from the map object
-var svg = d3.select("#map").select("svg"),
-  g = svg.append("g");
+let svgMap = d3.select("#mapid").select("svg").append("g");
 
+let sensorID; 
 
-// ----- DATA PREPARATION ------------------------//
-var meta = d3.csv("http://localhost:8000/meta.csv");
-meta.then(function (meta) {
-  meta.map(function (m) {
-    m.latitude = +m.latitude;
-    m.longitude = +m.longitude;
-    return m;
-  });
-});
+// Load the meta csv and update map
+let  metaset = d3.csv("http://localhost:8000/meta.csv");
 
-// ----- ADD CIRCLES TO MAP --------------------//
-meta.then(function (meta) {
-  // Add a LatLng object to each item in the dataset
-  meta.forEach(function (m) {
+metaset.then(function(meta) {
+
+  // Add a LatLng object from meta coords
+  meta.forEach(m => {
     m.LatLng = new L.LatLng(m.latitude, m.longitude)
   })
 
-  var mouseOver = function () {
-    var circle = d3.select(this);
-    circle.style("stroke", "blue");
-  }
-
-  var feature = g.selectAll("circle")
+  // Select the svg layer and add the circles to it
+  let feature = svgMap.selectAll("mycircle")
     .data(meta)
     .enter()
     .append("circle")
-    .style("stroke", "black")
-    .style("opacity", .6)
+    .attr("cx", d =>  { map.latLngToLayerPoint(d.LatLng).x })
+    .attr("cy", d => { map.latLngToLayerPoint(d.LatLng).y })
+    .attr("r", 8)
     .style("fill", "red")
-    .attr("r", 10)
-    .on("mouseover", mouseOver)
-    .on("click", doSomething);
+    .attr("stroke", "red")
+    .attr("stroke-width", 3)
+    .attr("fill-opacity", .4)
+    .attr("pointer-events","visible").on("click", d => {sensorID = d.monitorID});
 
-  map.on("viewreset", update);
+  // Function that update circle position if something change
+  function update() {
+    //g.selectAll("circle")
+    feature
+      .attr("cx", function (d) {
+        return map.latLngToLayerPoint(d.LatLng).x
+      })
+      .attr("cy", function (d) {
+        return map.latLngToLayerPoint(d.LatLng).y
+      })
+  }
+
+  // If the user change the map (zoom or drag), update circle position:
+  map.on("moveend", update)
   update();
 
-  function update() {
-    feature.attr("transform",
-      function (d) {
-        return "translate(" +
-          map.latLngToLayerPoint(d.LatLng).x + "," +
-          map.latLngToLayerPoint(d.LatLng).y + ")";
-      }
-    )
-  }
-})
+});
 
-var doSomething = function (d) {
-  var poi = d3.select(this);
-  poi.style("fill", "black");
-  console.log(d);
-
-}
+//feature.on("click", d => {console.log(d)})

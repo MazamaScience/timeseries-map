@@ -3,8 +3,9 @@ const height = 500;
 const margin = 5;
 const padding = 5;
 const adj = 30;
+
 // append SVG first
-var svg = d3.select("#plot").append("svg")
+let svgPlot = d3.select("#plot").append("svg")
     .attr("preserveAspectRatio", "xMinYMin meet")
     .attr("viewBox", "-" +
         adj + " -" +
@@ -29,13 +30,19 @@ const dataset = d3.csv("http://localhost:8000/data.csv");
 
 const parseDate = d3.timeParse("%Y-%m-%dT%H:%M:%SZ");
 
+map.on("click", function(d) {
+    console.log(sensorID, d);
+    svgPlot.selectAll("path.line-" + sensorID)
+        .style("fill", "red")
+});
+
 dataset.then(function(data) {
 
     // This chunk takes the CSV data, remaps it to a more appropriate format
-    var slc = data.columns.slice(1).map(function (id) {
+    var slc = data.columns.slice(1).map(function(id) {
         return {
             id: id,
-            values: data.map(function (d) {
+            values: data.map(function(d) {
                 return {
                     date: parseDate(d.datetime),
                     pm25: +d[id]
@@ -52,11 +59,11 @@ dataset.then(function(data) {
     const xScl = d3.scaleUtc().range([0, width]);
     const yScl = d3.scaleLinear().rangeRound([height, 0]);
 
-    xScl.domain(d3.extent(data, function (d) {
+    xScl.domain(d3.extent(data, function(d) {
         return parseDate(d.datetime)
     }));
-    yScl.domain([(0), d3.max(slc, function (c) {
-        return d3.max(c.values, function (d) {
+    yScl.domain([(0), d3.max(slc, function(c) {
+        return d3.max(c.values, function(d) {
             return d.pm25 + 4;
         });
     })]);
@@ -81,17 +88,18 @@ dataset.then(function(data) {
             return yScl(d.pm25)
         });
 
-    let id = 0;
+    // Add custom class id to each line using monitorID
+    let i = 0;
     const ids = () => {
-        return "line-" + id++
+        return "line-" + slc[i++].id
     }
 
-    svg.append("g")
+    svgPlot.append("g")
         .attr("class", "axis")
         .attr("transform", "translate(0," + height + ")")
         .call(xAxis);
 
-    svg.append("g")
+    svgPlot.append("g")
         .attr("class", "axis")
         .call(yAxis)
     // .append("text")
@@ -101,14 +109,25 @@ dataset.then(function(data) {
     // .style("text-anchor", "end")
     // .text("PM2.5");
 
-    const lines = svg.selectAll("lines")
+    const lines = svgPlot.selectAll("lines")
         .data(slc)
         .enter()
         .append("g");
 
+    let toggleCol = (function() {
+           var currentColor = "black";
+
+    return function(){
+        currentColor = currentColor == "black" ? "magenta" : "black";
+        d3.select(this).style("fill", currentColor);
+        console.log(this)
+    }
+    })();
+
     lines.append("path")
         .attr("class", ids)
-        .attr("d", function(d) { return line(d.values) });
+        .attr("d", function(d) { return line(d.values) }) 
+        .on("click", toggleCol);
 
 
     lines.append("text")
