@@ -15,55 +15,53 @@ let svgPlot = d3.select("#plot").append("svg")
     .style("padding", padding)
     .style("margin", margin)
     .classed("svg-content", true);
-//     .attr("preserveAspectRatio", "xMinYMin meet")
-//     .attr("viewBox", "-" + adj + " -" + adj + " " + (width + adj) + " " + (height + adj))
-//     .style("padding", 5)
-//     .style("margin", 5)
-//     .classed("svg-content", true);
-
-// svg.append("text")
-//     .style("font-size", "16px")
-//     .text("pm2.5");
-
-// ----- DATA PREPARATION ------------------------//
-const dataset = d3.csv("http://localhost:8000/data.csv");
 
 const parseDate = d3.timeParse("%Y-%m-%dT%H:%M:%SZ");
 
+// ----- Sensor Click Input --------------------//
 map.on("click", function(d) {
-    console.log(sensorID, d);
+    //console.log(sensorID, d);
+    svgPlot.selectAll("path")
+        //.attr("visibility", "hidden")
+        .style("opacity", 0);
+
+    svgPlot.selectAll(".domain").style("opacity", 1); //.attr("visibility", "visible");
+
     svgPlot.selectAll("path.line-" + sensorID)
-        .style("fill", "red")
+        //.attr("visibility", "visible")
+        .transition()
+        .style("opacity", 1)
+        .style("stroke", "red");
+
+
+
 });
 
 dataset.then(function(data) {
 
     // This chunk takes the CSV data, remaps it to a more appropriate format
-    var slc = data.columns.slice(1).map(function(id) {
+    let slc = data.columns.slice(1).map(function(id) {
         return {
             id: id,
             values: data.map(function(d) {
                 return {
                     date: parseDate(d.datetime),
-                    pm25: +d[id]
+                    pm25: +d[id],
+                    color: d3.interpolateYlGn(+d[id])
                 };
             })
         }
     });
 
-    console.log(slc)
-
-
-
     // Scale prep
     const xScl = d3.scaleUtc().range([0, width]);
     const yScl = d3.scaleLinear().rangeRound([height, 0]);
 
-    xScl.domain(d3.extent(data, function(d) {
+    xScl.domain(d3.extent(data, function (d) {
         return parseDate(d.datetime)
     }));
-    yScl.domain([(0), d3.max(slc, function(c) {
-        return d3.max(c.values, function(d) {
+    yScl.domain([(0), d3.max(slc, function (c) {
+        return d3.max(c.values, function (d) {
             return d.pm25 + 4;
         });
     })]);
@@ -114,96 +112,30 @@ dataset.then(function(data) {
         .enter()
         .append("g");
 
-    let toggleCol = (function() {
-           var currentColor = "black";
-
-    return function(){
-        currentColor = currentColor == "black" ? "magenta" : "black";
-        d3.select(this).style("fill", currentColor);
-        console.log(this)
-    }
-    })();
-
     lines.append("path")
         .attr("class", ids)
-        .attr("d", function(d) { return line(d.values) }) 
-        .on("click", toggleCol);
+        .attr("d", function (d) {
+            return line(d.values)
+        })
+        //.style("opacity", 0)
+        .style("fill", "none");
+
+    // let brush = d3.brushX()
+    //     .extent([
+    //         [0, 0],
+    //         [width, height]
+    //     ])
+    //     .on("end", updatePlot)
+    // svgPlot
+    //     .attr("class", "brush")
+    //     .call(brush);
 
 
-    lines.append("text")
-    .attr("class","serie_label")
-    .datum(function(d) {
-        return {
-            id: d.id,
-            value: d.values[d.values.length - 1]}; })
-    .attr("transform", function(d) {
-            return "translate(" + (xScl(d.value.date) + 10) + "," + (yScl(d.value.pm25) + 5 ) + ")"; })
-    .attr("x", 5)
-    .text(function(d) { return ("Serie ") + d.id; });
+
+    // function updatePlot() {
+    //     extent = d3.selection.extent
+    //     //console.log(extent)
+
+    // }
 
 });
-
-// dataset.then(function (dataObjects) {
-//     // // Option 1 
-//     // dataObjects.forEach(d => {
-//     //     newObj = {
-//     //         date: d.datetime,
-//     //         values: Object.keys(d).map(function (key) {
-//     //             if (key != "datetime") {
-//     //                 return { [key]: d[key]}
-//     //             }
-//     //         })
-//     //     }
-//     //     console.log(newObj)
-//     //     // fancy screen stuff 
-//     //     // newObj.values.forEach{...}
-//     // })
-
-//     // // Option 2
-
-//     dataObjects.map(function (obj) {
-//         return 1
-//     })
-
-//     // data.entries();
-//     // data.forEach(function (d) {
-//     //     console.log(d)
-//     // })
-//     // data.map(function (d) {
-//     //    // stuff
-//     //     let dates = new Date(d.datetime)
-//     //     //let vals = d[[dataCols]]
-//     //     console.log(d)
-
-//     //     return {
-//     //         datetime: dates
-
-//     //     }
-//     // });
-
-//     // console.log(data)
-
-// });
-
-/*
-// ----- BAR CHART ---------------------------//
-dataset.then(function (data) {
-    svg.selectAll("div#plot")
-        .data(data)
-        .enter()
-        .append("rect")
-        .attr("class", "bar")
-        .attr("x", function (d, i) {
-            for (i > 0; i < data.length; i++) {
-                return i * 24; // Big bins temporary
-            }
-        })
-        .attr("y", function (d) {
-            return height - (d.val * 10);
-        })
-        .attr("width", 20)
-        .attr("height", function (d) {
-            return d.val * 10;
-        });
-});
-*/

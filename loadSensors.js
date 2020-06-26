@@ -1,8 +1,10 @@
-var dataset = d3.csv('data.csv');
-dataset.then(function(data) {
-    data.map(function(d) {
-        d.val = +d.val; 
-        return d;
-    })
-}); 
-console.log(dataset)
+// Load from CSV
+
+// Load metadata
+const metaUrl = "https://raw.githubusercontent.com/MazamaScience/timeseries-map/master/meta.csv";
+const metaset = d3.csv(metaUrl);
+
+// Load data
+const dataUrl = "https://raw.githubusercontent.com/MazamaScience/timeseries-map/master/data.csv";
+const dataset = d3.csv(dataUrl);
+

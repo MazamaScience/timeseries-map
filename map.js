@@ -7,7 +7,7 @@ let map = L
 L.tileLayer(
   'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a>',
-    maxZoom: 12,
+    maxZoom: 18,
   }).addTo(map);
 
 
@@ -17,10 +17,7 @@ L.svg().addTo(map);
 // We pick up the SVG from the map object
 let svgMap = d3.select("#mapid").select("svg").append("g");
 
-let sensorID; 
-
-// Load the meta csv and update map
-let  metaset = d3.csv("http://localhost:8000/meta.csv");
+let sensorID;
 
 metaset.then(function(meta) {
 
@@ -29,22 +26,55 @@ metaset.then(function(meta) {
     m.LatLng = new L.LatLng(m.latitude, m.longitude)
   })
 
+  let onMarkerClick = function (d) {
+    //console.log(d)
+    sensorID = d.monitorID
+    feature.style("stroke", "red")
+    d3.select(d3.event.target)
+      .raise()
+      .transition()
+      .duration(100)
+      .style("stroke", "blue")
+  }
+
+  let mouseIn = function (d) {
+    d3.select(d3.event.target)
+      .raise()
+      .transition()
+      .duration(100)
+      .attr("r", 12);
+  }
+
+  let mouseOut = function (d) {
+    d3.select(d3.event.target)
+      .transition()
+      .duration(150)
+      .attr("r", 8);
+  }
+
   // Select the svg layer and add the circles to it
   let feature = svgMap.selectAll("mycircle")
     .data(meta)
     .enter()
     .append("circle")
-    .attr("cx", d =>  { map.latLngToLayerPoint(d.LatLng).x })
-    .attr("cy", d => { map.latLngToLayerPoint(d.LatLng).y })
+    .attr("cx", d => {
+      map.latLngToLayerPoint(d.LatLng).x
+    })
+    .attr("cy", d => {
+      map.latLngToLayerPoint(d.LatLng).y
+    })
     .attr("r", 8)
-    .style("fill", "red")
+    .style("fill","red")
     .attr("stroke", "red")
     .attr("stroke-width", 3)
     .attr("fill-opacity", .4)
-    .attr("pointer-events","visible").on("click", d => {sensorID = d.monitorID});
+    .on("mouseover", mouseIn)
+    .on("mouseout", mouseOut)
+    .attr("pointer-events", "visible")
+    .on("click", onMarkerClick);
 
   // Function that update circle position if something change
-  function update() {
+  function updateMap() {
     //g.selectAll("circle")
     feature
       .attr("cx", function (d) {
@@ -56,8 +86,8 @@ metaset.then(function(meta) {
   }
 
   // If the user change the map (zoom or drag), update circle position:
-  map.on("moveend", update)
-  update();
+  map.on("moveend", updateMap)
+  updateMap();
 
 });
 
