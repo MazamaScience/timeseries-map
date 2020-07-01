@@ -29,12 +29,17 @@ metaset.then(function(meta) {
   let onMarkerClick = function (d) {
     //console.log(d)
     sensorID = d.monitorID
-    feature.style("stroke", "red")
+    
+    feature.style("stroke", "white")
+    
     d3.select(d3.event.target)
       .raise()
       .transition()
       .duration(100)
-      .style("stroke", "blue")
+      .style("stroke", "black")
+      .attr("stroke-width", 4)
+      .attr("fill-opacity", 1)
+      .attr("stroke-opacity", 1)
   }
 
   let mouseIn = function (d) {
@@ -64,10 +69,11 @@ metaset.then(function(meta) {
       map.latLngToLayerPoint(d.LatLng).y
     })
     .attr("r", 8)
-    .style("fill","red")
-    .attr("stroke", "red")
-    .attr("stroke-width", 3)
-    .attr("fill-opacity", .4)
+    //.style("fill", "red")
+    .attr("stroke", "white")
+    .attr("stroke-width", 2)
+    .attr("fill-opacity", 0.75)
+    .attr("stoke-opacity", 0.75)
     .on("mouseover", mouseIn)
     .on("mouseout", mouseOut)
     .attr("pointer-events", "visible")
@@ -85,10 +91,16 @@ metaset.then(function(meta) {
       })
   }
 
+  function updateColor() {
+    feature
+      .transition()
+      .duration(75)
+      .style("fill", (d, i) => { return focusColor[i].color })
+  }
+
   // If the user change the map (zoom or drag), update circle position:
   map.on("moveend", updateMap)
+  svgPlot.on("mousemove", updateColor)
   updateMap();
 
 });
-
-//feature.on("click", d => {console.log(d)})
