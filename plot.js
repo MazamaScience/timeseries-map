@@ -25,6 +25,8 @@ map.on("click", function(d) {
         //.attr("visibility", "hidden")
         .style("opacity", 0);
 
+    // Hacky way to show the xaxis and line on marker click
+    svgPlot.selectAll(".mouse-line").style("opacity", 1);
     svgPlot.selectAll(".domain").style("opacity", 1); //.attr("visibility", "visible");
 
     svgPlot.selectAll("path.line-" + sensorID)
@@ -33,21 +35,19 @@ map.on("click", function(d) {
         .style("opacity", 1)
         .style("stroke", "red");
 
-
-
 });
     // Create cursor follower
     let focus = svgPlot.append("g")
-        .append("display", "none");
+        //.append("display", "none");
 
-// 
+// Store mouseover focus data 
 let focusDate; 
 let focusColor; 
-let fcol; 
 
 // color ramp map 
 let col = d3.scaleThreshold() 
     .domain([12, 35, 55, 75, 100])
+    // SCAQMD profile
     .range(["#abe3f4", "#118cba", "#286096", "#8659a5", "#6a367a"])
 
 dataset.then(function(data) {
@@ -105,9 +105,18 @@ dataset.then(function(data) {
     // Add the y axis
     svgPlot.append("g")
         .attr("class", "y-axis")
-        .call(yAxis)
+        .call(yAxis);
 
         
+    // Vertical line to follow mouse
+    let mouseG = svgPlot.append("g")
+      .attr("class", "mouse-over-effects");
+
+    mouseG.append("path") 
+      .attr("class", "mouse-line")
+      .style("stroke", "black")
+      .style("stroke-width", "1px")
+      .style("opacity", 1);
 
     // Line Prep
     // TODO: Make bars 
@@ -151,11 +160,16 @@ dataset.then(function(data) {
         .on("mousemove", followMouse); 
 
     function followMouse() {
+
+        
         let x0 = xScl.invert(d3.mouse(this)[0])           
         let pp = slc.filter(d => { return d.id == sensorID })[0]
 
         let i = bisect(pp.values, x0, 1)
-        focusDate = x0; 
+        
+        focusDate = slc.map(d => {
+            return d.values[i].date
+        });
 
         // Map the color to each timestep on cursor 
         focusColor = slc.map(d => {
@@ -164,7 +178,16 @@ dataset.then(function(data) {
                 date: d.values[i].date, 
                 color: d.values[i].color
             }
-        })
+        });
+
+        // Move focus line 
+        let mouse = d3.mouse(this);
+        d3.select(".mouse-line")
+            .attr("d", () => {
+                let d = "M" + mouse[0] + "," + height; 
+                d += " " + mouse[0] + "," + 0; 
+                return d; 
+            }); 
 
     }
 });
